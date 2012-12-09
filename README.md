@@ -12,6 +12,13 @@ Arduino + GPS + micro SD card == lat/long data logged to a file periodically.
 
 ## Software
 
+### Required Libraries
+
+[TinyGPS](http://arduiniana.org/libraries/tinygps/)  <br />
+[FlexiTimer2](http://www.pjrc.com/teensy/td_libs_MsTimer2.html) <br />
+
+
+
 ## Visualization
 
 ## Licence 

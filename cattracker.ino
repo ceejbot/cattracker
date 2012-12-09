@@ -1,10 +1,14 @@
 /*
     Cat Tracker 2012.
+    This is an Arduino sketch to control a GPS module + an SD card module.
+    It logs location data to the configured logfile in bursts every N
+    seconds. 
  */
 
 #include <SD.h>
 #include <SoftwareSerial.h>
 #include <TinyGPS.h>
+#include <FlexiTimer2.h>
 
 // Define which pins you will use on the Arduino to communicate with your 
 // GPS. In this case, the GPS module's TX pin will connect to the 
@@ -25,30 +29,49 @@ const int chipSelect = 4;
 File logfile;
 #define LOGFILE "datalog.js"
 
-void getgps(TinyGPS &gps);
+#define BURST_COUNT 60
+#define SLEEP_DURATION_MS 15 * 1000
+
+//------------------------------------------------------------------------------
 
 void setup()
 {
     Serial.begin(TERMBAUD);
     uart_gps.begin(GPSBAUD);
     
-    Serial.println("Cat Tracker is in the ceiling, watching your cat.
-    Serial.println("GPS waiting for lock.");
+    Serial.println("Cat Tracker starting up.");
     
     pinMode(10, OUTPUT);
     if (SD.begin(chipSelect))
         startLogging();
     else
-        Serial.println("SD card failed or not present; no data will be logged.");
+        Serial.println("SD card failed or not present; not logging data.");
+    
+    // Log one burst, then run the timer to control the next bursts.
+    logGPSData();
+        
+	FlexiTimer2::set(SLEEP_DURATION_MS, logGPSData); // 500ms period
+	FlexiTimer2::start();
 }
 
 void loop()
 {
-    while (uart_gps.available())
+}
+
+//------------------------------------------------------------------------------
+
+void logGPSData()
+{
+	int counter = BURST_COUNT;
+
+    while (uart_gps.available() && counter)
     {
 		int c = uart_gps.read();
 		if (gps.encode(c) && logfile)
+		{
 			addLogEntry(gps, logfile);
+			counter--;
+		}
         
         readSerialCommand();
     }
@@ -56,8 +79,7 @@ void loop()
 
 void addLogEntry(TinyGPS &gps, File &logfile)
 {
-    // log entries are formatted as JSON:
-    // { date:"", lat:"", lon:"" }
+    // log entries are formatted as JSON: { date:"", lat:"", lon:"" }
     // date format: ddmmyy hhmmsscc 
 
     float latitude, longitude;
@@ -83,8 +105,12 @@ void addLogEntry(TinyGPS &gps, File &logfile)
 
 void reset()
 {
-    // TODO
-    // probably close file, remove, open fresh
+    if (logfile)
+    {
+    	logfile.close();
+    	SD.remove(LOGFILE);
+    	startLogging();
+    }
 }
 
 void startLogging()
@@ -92,21 +118,23 @@ void startLogging()
 	// TODO name file using timestamp (time from gps?)
 	logfile = SD.open(LOGFILE, FILE_WRITE);
 	if (!logfile)
-		Serial.println("Opening log for writing failed. Grumpy cat is grumpy.");
+		Serial.println("Unable to open log file for writing.");
 	else
 		Serial.println("Data logging started.");
-	logfile.println("------ new session ------");
+	logfile.println("------ start");
 }
 
 void dumpLog()
 {
+	unsigned long pos = 0;
+
     if (logfile)
     {
-        logfile.flush();
-        logfile.close();
+    	pos = logfile.position();
+    	logfile.seek(0);
     }
-	
-	logfile = SD.open(LOGFILE);
+    else
+		logfile = SD.open(LOGFILE);
 
     if (logfile)
     {
@@ -114,14 +142,12 @@ void dumpLog()
         while (logfile.available())
             Serial.write(logfile.read());
         Serial.println("------");
-        logfile.close();
-		startLogging();
+        Serial.println(logfile.position());
     }
     else
         Serial.println("Unable to open log file for reading.");
         
 }
-
 
 void readSerialCommand()
 {
@@ -151,4 +177,3 @@ void readSerialCommand()
         }
     }
 }
-
