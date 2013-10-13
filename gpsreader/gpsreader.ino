@@ -6,14 +6,18 @@
 //   Connect the GPS TX (transmit) pin to ARD_RXPIN
 //   Connect the GPS RX (receive) pin to ARD_TXPIN
 
-#define ARD_RXPIN 7
-#define ARD_TXPIN 8
+// For the Bluetooth Mate
+#define ARD_RXPIN 0
+#define ARD_TXPIN 6
 
 #define TERMBAUD 115200
 #define GPSBAUD  9600
 
 HardwareSerial gpsSerial = HardwareSerial();
 Adafruit_GPS GPS(&gpsSerial);
+SoftwareSerial bluetooth(ARD_RXPIN, ARD_TXPIN);
+
+int mode = 0;
 
 #define GPSECHO false
 
@@ -30,12 +34,10 @@ void setup()
 	Serial.begin(TERMBAUD);
 	Serial.println("Cat tracker test one.");
 
+	initializeBluetooth();
+
 	GPS.begin(GPSBAUD);
-
 	useInterrupt(true);
-
-	// You can adjust which sentences to have the module emit, below
-	// Default is RMC + GGA
 	GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
 	GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
 
@@ -78,6 +80,37 @@ void useInterrupt(boolean v)
 		TIMSK0 &= ~_BV(OCIE0A);
 		usingInterrupt = false;
 	}
+}
+
+//-------------------------------------------------------------------
+// Bluetoof functions
+
+void initializeBluetooth()
+{
+	Serial.print("Initializing bluetooth... ");
+	bluetooth.begin(115200);
+	enterCommandMode();
+	bluetooth.print("SN,CatTracker\n");
+	bluetooth.print("D\n");
+	Serial.println("    done.");
+}
+
+void enterCommandMode()
+{
+	bluetooth.print("$");
+	bluetooth.print("$");
+	bluetooth.print("$");  // Enter command mode
+	delay(100);
+	bluetooth.println("U,9600,N");  // Temporarily Change the baudrate to 9600, no parity
+	bluetooth.begin(9600);
+}
+
+void sendBluetoothCommands()
+{
+	Serial.println("Next line will be sent to the bluetooth module...\n");
+	mode = 1;
+	enterCommandMode();
+	delay(100);
 }
 
 //-------------------------------------------------------------------
@@ -142,7 +175,27 @@ void help()
 
 void readSerialCommand()
 {
-	// Serial.readBytesUntil(character, buffer, length)
+	while (bluetooth.available())
+	{
+		Serial.print((char)bluetooth.read());
+	}
+
+	if (mode == 1)
+	{
+		if (Serial.available())
+		{
+			char command = (char)Serial.read();
+			bluetooth.print(command);
+
+			if (command == '\n')
+			{
+				Serial.println("Bluetooth done.");
+				mode = 0;
+			}
+		}
+		return;
+	}
+
 	if (Serial.available())
 	{
 		char command = Serial.read();
@@ -151,6 +204,10 @@ void readSerialCommand()
 		{
 			case 'h':
 				help();
+				break;
+
+			case 'b':
+				sendBluetoothCommands();
 				break;
 
 			case 'r':
