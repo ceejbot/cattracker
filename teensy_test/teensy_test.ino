@@ -5,23 +5,22 @@
     seconds.
  */
 
-#include <Adafruit_GPS.h>
-#include <SoftwareSerial.h>
+#include <TinyGPS.h>
 #include <FlexiTimer2.h>
 
-#define TXPIN PIN_D0
-#define RXPIN PIN_D1
+#define ARD_TXPIN 21
+#define ARD_RXPIN 20
 
 // Baud rate of Arduino serial terminal. Must be fast.
 #define TERMBAUD    115200
 // Baud rate of the GPS module.
-#define GPSBAUD  4800
+#define GPSBAUD  9600
 
 TinyGPS gps;
-SoftwareSerial uart_gps(RXPIN, TXPIN);
+HardwareSerial uart_gps = HardwareSerial();
 
 // SD card setup.
-SoftwareSerial logger(PIN_D2, PIN_D3);
+// SoftwareSerial logger(PIN_D2, PIN_D3);
 
 #define BURST_COUNT 60
 #define SLEEP_DURATION_MS 15 * 1000
@@ -35,8 +34,8 @@ void setup()
 
     Serial.println("Cat Tracker online.");
 
-    pinMode(PIN_D0, OUTPUT);
-    // pinMode(PIN_D2, OUTPUT);
+    //pinMode(ARD_TXPIN, OUTPUT);
+    //pinMode(ARD_RXPIN, INPUT);
 
     startLogging();
     // Log one burst, then run the timer to control the next bursts.
@@ -55,6 +54,7 @@ void loop()
 
 void logGPSData()
 {
+    Serial.println("logGPSData()");
 	int counter = BURST_COUNT;
 
     while (uart_gps.available() && counter)
@@ -134,9 +134,12 @@ void readSerialCommand()
                 break;
 
             case 's':
-                // status
-                // TODO
+                Serial.println("s");
+                uart_gps.println("!");
                 break;
         }
     }
+
+    while (uart_gps.available())
+        Serial.print(uart_gps.read());
 }

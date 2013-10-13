@@ -2,7 +2,7 @@
     Cat Tracker 2012.
     This is an Arduino sketch to control a GPS module + an SD card module.
     It logs location data to the configured logfile in bursts every N
-    seconds. 
+    seconds.
  */
 
 #include <SD.h>
@@ -10,8 +10,8 @@
 #include <TinyGPS.h>
 #include <FlexiTimer2.h>
 
-// Define which pins you will use on the Arduino to communicate with your 
-// GPS. In this case, the GPS module's TX pin will connect to the 
+// Define which pins you will use on the Arduino to communicate with your
+// GPS. In this case, the GPS module's TX pin will connect to the
 // Arduino's RXPIN which is pin 3.
 #define RXPIN 2
 #define TXPIN 3
@@ -38,18 +38,18 @@ void setup()
 {
     Serial.begin(TERMBAUD);
     uart_gps.begin(GPSBAUD);
-    
+
     Serial.println("Cat Tracker starting up.");
-    
+
     pinMode(10, OUTPUT);
     if (SD.begin(chipSelect))
         startLogging();
     else
         Serial.println("SD card failed or not present; not logging data.");
-    
+
     // Log one burst, then run the timer to control the next bursts.
     logGPSData();
-        
+
 	FlexiTimer2::set(SLEEP_DURATION_MS, logGPSData); // 500ms period
 	FlexiTimer2::start();
 }
@@ -72,26 +72,26 @@ void logGPSData()
 		{
 			addLogEntry(gps, logfile);
 			counter--;
-		}        
+		}
     }
 }
 
 void addLogEntry(TinyGPS &gps, File &logfile)
 {
     // log entries are formatted as JSON: { date:"", lat:"", lon:"" }
-    // date format: ddmmyy hhmmsscc 
+    // date format: ddmmyy hhmmsscc
 
     float latitude, longitude;
     gps.f_get_position(&latitude, &longitude);
 
     unsigned long date, time, age;
     gps.get_datetime(&date, &time, &age);
- 
+
     logfile.print("{\"date\":\"");
     logfile.print(date, DEC);
     logfile.print(" ");
     logfile.print(time, DEC);
-    
+
     logfile.print("\",\"lat\":\"");
     logfile.print(latitude, 10);
 
@@ -145,7 +145,7 @@ void dumpLog()
     }
     else
         Serial.println("Unable to open log file for reading.");
-        
+
 }
 
 void readSerialCommand()
@@ -154,21 +154,21 @@ void readSerialCommand()
     if (Serial.available())
     {
         char command = Serial.read();
-    
+
         switch (command)
         {
             case 'r':
                 reset();
                 break;
-        
+
             case 'd':
                 dumpLog();
                 break;
-            
+
             case 'g':
                 startLogging();
                 break;
-            
+
             case 's':
                 // status
                 // TODO
