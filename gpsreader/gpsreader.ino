@@ -10,14 +10,11 @@
 #define ARD_TXPIN 8
 
 #define TERMBAUD 115200
-// 9600 NMEA is the default baud rate for MTK - some use 4800
 #define GPSBAUD  9600
 
 HardwareSerial gpsSerial = HardwareSerial();
 Adafruit_GPS GPS(&gpsSerial);
 
-// Set GPSECHO to 'false' to turn off echoing the GPS data to the Serial console
-// Set to 'true' if you want to debug and listen to the raw GPS sentences
 #define GPSECHO false
 
 boolean usingInterrupt = false;
@@ -43,20 +40,16 @@ void setup()
 	GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
 
 	delay(500);
-	Serial.print("Cat tracking...");
-	if (GPS.LOCUS_StartLogger())
-		Serial.println(" commenced!");
-	else
-		Serial.println(" no response from GPS; debug connections");
+	startLogging();
 	delay(1000);
 }
 
 void loop()
 {
-	// we're doing all the work in the interrupt
+	readSerialCommand();
 }
 
-/******************************************************************/
+//-------------------------------------------------------------------
 
 // Interrupt is called once a millisecond, looks for any new GPS data, and stores it
 SIGNAL(TIMER0_COMPA_vect)
@@ -87,4 +80,98 @@ void useInterrupt(boolean v)
 	}
 }
 
-// GPS.sendCommand(PMTK_LOCUS_ERASE_FLASH);
+//-------------------------------------------------------------------
+
+void startLogging()
+{
+	Serial.print("Cat tracking...");
+	if (GPS.LOCUS_StartLogger())
+		Serial.println(" commenced!");
+	else
+		Serial.println(" no response from GPS; debug connections");
+}
+
+void reset()
+{
+	Serial.println("reset() unimplemented");
+}
+
+void erase()
+{
+	Serial.println("erasing stored data");
+	GPS.sendCommand(PMTK_LOCUS_ERASE_FLASH);
+}
+
+void dumpLog()
+{
+	Serial.println("dumpLog() unimplemented");
+}
+
+void status()
+{
+	if (GPS.LOCUS_ReadStatus())
+	{
+		Serial.print("Status code: ");
+		Serial.print(GPS.LOCUS_status, DEC);
+		Serial.println(" ");
+
+		// look at GPS.LOCUS_percent
+		Serial.print("Storage: ");
+		Serial.print(GPS.LOCUS_percent, DEC);
+		Serial.println("\% full");
+
+		Serial.print("Location: ");
+		Serial.print(GPS.latitude, 10);
+		Serial.print(" lat; ");
+		Serial.print(GPS.longitude, 10);
+		Serial.print(" lon; ");
+		Serial.print(GPS.altitude, 10);
+		Serial.println(" alt");
+	}
+}
+
+void help()
+{
+	Serial.println("Cat tracker commands:");
+	Serial.println("d: dump logs to bluetooth");
+	Serial.println("e: erase GPS log flash");
+	Serial.println("g: start logging");
+	Serial.println("r: reset logging");
+	Serial.println("s: emit GPS module status");
+}
+
+void readSerialCommand()
+{
+	// Serial.readBytesUntil(character, buffer, length)
+	if (Serial.available())
+	{
+		char command = Serial.read();
+
+		switch (command)
+		{
+			case 'h':
+				help();
+				break;
+
+			case 'r':
+				reset();
+				break;
+
+			case 'd':
+				dumpLog();
+				break;
+
+			case 'g':
+				startLogging();
+				break;
+
+			case 's':
+				status();
+				break;
+
+			case 'e':
+				erase();
+				break;
+		}
+	}
+}
