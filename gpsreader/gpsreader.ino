@@ -18,6 +18,7 @@ Adafruit_GPS GPS(&gpsSerial);
 SoftwareSerial bluetooth(ARD_RXPIN, ARD_TXPIN);
 
 int mode = 0;
+char cmd[16];
 
 #define GPSECHO false
 

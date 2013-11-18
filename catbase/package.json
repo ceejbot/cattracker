@@ -1,0 +1,20 @@
+{
+  "name": "catbase",
+  "version": "0.0.1",
+  "description": "cat tracker base station",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "author": "C J Silverio <ceejceej@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "bluetooth-serial-port": "~1.0.5",
+    "p-promise": "~0.2.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/ceejbot/cattracker.git"
+  }
+}
