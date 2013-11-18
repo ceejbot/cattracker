@@ -28,9 +28,9 @@ Diagram & how-to TBD.
 
 ## Software
 
-* [gpsreader](./gpsreader/): runs on the Arduino; responds to commands from base station
-* [catbase](./gpsreader/): runs on the Beagle; issues commands on connection
-* catmap: the mapping server
+* [catcollar](./catcollar/): runs on the Arduino; responds to commands from base station
+* [catbase](./catbase/): runs on the Beagle; issues commands on connection
+* [catmap](./catmap/): the mapping server
 
 ### Required Libraries
 
