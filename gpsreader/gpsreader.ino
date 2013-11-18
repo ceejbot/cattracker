@@ -22,7 +22,7 @@ int mode = 0;
 #define GPSECHO false
 
 boolean usingInterrupt = false;
-void useInterrupt(boolean); // Func prototype keeps Arduino 0023 happy
+void useInterrupt(boolean);
 
 void setup()
 {
@@ -57,7 +57,6 @@ void loop()
 SIGNAL(TIMER0_COMPA_vect)
 {
 	char c = GPS.read();
-	// if you want to debug, this is a good time to do it!
 	if (GPSECHO && c)
 	{
 		Serial.print(c);
@@ -90,9 +89,8 @@ void initializeBluetooth()
 	Serial.print("Initializing bluetooth... ");
 	bluetooth.begin(115200);
 	enterCommandMode();
-	bluetooth.print("SN,CatTracker\n");
-	bluetooth.print("D\n");
-	Serial.println("    done.");
+	bluetooth.println("SN,CatTracker\n");
+	Serial.println("done.");
 }
 
 void enterCommandMode()
@@ -161,16 +159,21 @@ void status()
 		Serial.print(GPS.altitude, 10);
 		Serial.println(" alt");
 	}
+
+	enterCommandMode();
+	bluetooth.print("D");;
+	bluetooth.print("\n");
 }
 
 void help()
 {
 	Serial.println("Cat tracker commands:");
-	Serial.println("d: dump logs to bluetooth");
-	Serial.println("e: erase GPS log flash");
-	Serial.println("g: start logging");
-	Serial.println("r: reset logging");
-	Serial.println("s: emit GPS module status");
+	Serial.println("    b: send commands to bluetooth module");
+	Serial.println("    d: dump logs to bluetooth");
+	Serial.println("    e: erase GPS log flash");
+	Serial.println("    g: start logging");
+	Serial.println("    r: reset logging");
+	Serial.println("    s: emit GPS module status");
 }
 
 void readSerialCommand()
